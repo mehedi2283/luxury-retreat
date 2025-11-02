@@ -148,7 +148,7 @@ body {
   border-color: #a7a58d;
 }
 
-/* ---------- BACK BUTTON (Reverse Sweep 3→9) ---------- */
+/* ---------- BACK BUTTON ---------- */
 .btn-back {
   background: transparent;
   border: 1px solid #000;
@@ -164,7 +164,7 @@ body {
 }
 
 .btn-back::before {
-    content: "";
+  content: "";
   position: absolute;
   left: 0.1%;
   top: 0;
@@ -217,83 +217,6 @@ body {
   }
 }
 
-/* ---------- RESPONSIVE ---------- */
-@media (max-width: 900px) {
-  .luxury-grid {
-    grid-template-columns: 1fr;
-    gap: 40px;
-  }
-
-  .room-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-  }
-}
-
-@media (max-width: 600px) {
-  .room-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .luxury-item img {
-    height: 260px;
-  }
-
-  .room-card img {
-    height: 220px;
-  }
-
-  .fancy-btn,
-  .btn-back {
-    padding: 10px 20px;
-    font-size: 13px;
-  }
-
-  .lux-h2 {
-    font-size: 1.6rem;
-  }
-}
-
-
-/* ---------- ADD-ONS PAGE ---------- */
-.addons-content {
-  text-align: left;
-  max-width: 600px;
-  margin: 0 auto 40px;
-  font-size: 15px;
-  line-height: 1.8;
-  color: #222;
-  animation: fadeUp 1s ease forwards;
-}
-
-.addons-content ul {
-  list-style: disc;
-  padding-left: 20px;
-}
-
-.addons-content li {
-  margin-bottom: 16px;
-}
-
-.addons-content strong {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 3px;
-}
-
-.addons-content p {
-  margin: 0;
-  padding-left: 10px;
-  font-weight: 400;
-}
-
-/* ---------- BUTTON ROW ---------- */
-.dual-btn-row {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 30px;
-}
 /* ---------- DETAIL PAGE (ROOM VIEW) ---------- */
 .detail-container {
   padding: 60px 20px;
@@ -350,15 +273,26 @@ body {
   margin-bottom: 5px;
 }
 
-/* ---------- ADD-ONS PAGE (MATCHED STYLE) ---------- */
+/* ---------- ADD-ONS (single source of truth) ---------- */
 .addons-content {
+  max-width: 700px;
+  margin: 0 auto 32px;
   text-align: left;
-  max-width: 600px;
-  margin: 0 auto 40px;
   font-size: 15px;
   line-height: 1.8;
   color: #222;
-  animation: fadeUp 0.8s ease forwards;
+
+  opacity: 0;
+  transform: translateY(24px);
+  animation: addonsIn 0.7s ease forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes addonsIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .addons-content ul {
@@ -377,6 +311,12 @@ body {
   margin-bottom: 3px;
 }
 
+.addons-content p {
+  margin: 0;
+  padding-left: 10px;
+  font-weight: 400;
+}
+
 /* ---------- BUTTON ALIGNMENT ---------- */
 .dual-btn-row {
   display: flex;
@@ -385,18 +325,6 @@ body {
   margin-top: 40px;
 }
 
-/* ---------- RESPONSIVE FIXES ---------- */
-@media (max-width: 768px) {
-  .detail-layout {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .detail-info {
-    text-align: center;
-  }
-}
 /* ---------- GRAND ESTATE SECTION ---------- */
 .estate-container {
   text-align: center;
@@ -440,9 +368,62 @@ body {
 .estate-container .btn-back {
   margin-top: 20px;
 }
+
 /* ---------- QUOTE BUTTON ---------- */
 .quote-btn {
   margin: 20px auto 40px;
   display: block;
   font-size: 15px;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 900px) {
+  .luxury-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .room-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+  }
+
+  .estate-row img {
+    width: 100%;
+    height: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .room-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .luxury-item img {
+    height: 260px;
+  }
+
+  .room-card img {
+    height: 220px;
+  }
+
+  .fancy-btn,
+  .btn-back {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+
+  .lux-h2 {
+    font-size: 1.6rem;
+  }
+
+  .detail-layout {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .detail-info {
+    text-align: center;
+  }
 }
