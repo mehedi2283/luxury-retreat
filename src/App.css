@@ -113,10 +113,7 @@ body {
   padding: 40px;
 }
 
-.contact{
-    width: 500px;
-    margin: auto;
-}
+
 
 /* ------------------ Typography ------------------ */
 .lux-h2 {
@@ -144,6 +141,10 @@ body {
   width: 100%;
   border: 1px solid #ddd;
   object-fit: cover;
+}
+.contact {
+    width: 500px;
+    margin: auto;
 }
 
 @media (max-width: 1024px) {
