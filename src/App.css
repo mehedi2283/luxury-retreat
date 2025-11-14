@@ -111,9 +111,11 @@ body {
 .card {
   background: #f3f3f3;
   padding: 40px;
-      width: 500px;
-    margin: auto;
+}
 
+.thankyou{
+    width: 500px;
+    margin: auto;
 }
 
 /* ------------------ Typography ------------------ */
@@ -161,7 +163,7 @@ body {
     width: 80%;
     max-width: 400px;
   }
-  .card {
+  .thankyou {
   
       width: 300px;
       padding: 20px;
