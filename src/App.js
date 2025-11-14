@@ -1,277 +1,495 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./App.css";
 
+/* ------------------ PRICING (Hidden on UI, used only for webhook) ------------------ */
+const PRICING = {
+  living: { label: "Living Areas (Living/Family)", price: 7800 },
+  dining: { label: "Dining Room", price: 5400 },
+  bedroom: { label: "Bedroom", price: 3350 },
+  bathroom: { label: "Bathroom", price: 250 },
+  kitchenArt: { label: "Kitchen (Art & Accessories)", price: 100 },
+
+  kitchenEssentials: { label: "Kitchen Essentials (Add-on)", price: 500 },
+  patio: { label: "Patio Area (Add-on)", price: 1500 },
+
+  entryway: { label: "Entryway Package (Add-on)", price: 750 },
+  office: { label: "Office / Den Package (Add-on)", price: 1500 },
+};
+
+/* ------------------ STEPS ------------------ */
+const STEPS = [
+  {
+    id: "living",
+    kind: "qty",
+    image: "/images/living.jpg",
+    title: "Living Room",
+    question: "How many living areas?",
+    priceKey: "living",
+  },
+  {
+    id: "dining",
+    kind: "qty",
+    image: "/images/dining.jpg",
+    title: "Dining Room",
+    question: "How many dining areas?",
+    priceKey: "dining",
+  },
+  {
+    id: "bedroom",
+    kind: "qty",
+    image: "/images/bedroom.jpg",
+    title: "Bedroom",
+    question: "How many bedrooms?",
+    priceKey: "bedroom",
+  },
+  {
+    id: "bathroom",
+    kind: "qty",
+    image: "/images/bathroom.jpg",
+    title: "Bathroom",
+    question: "How many bathrooms?",
+    priceKey: "bathroom",
+  },
+  {
+    id: "kitchenArt",
+    kind: "qty",
+    image: "/images/kitchen.jpg",
+    title: "Kitchen Styling",
+    question: "How many kitchens?",
+    priceKey: "kitchenArt",
+  },
+
+  /* ADD-ONS (qty + input also required) */
+  {
+    id: "kitchenEssentials",
+    kind: "qtyNoImage",
+    title: "Kitchen Essentials (Add-on)",
+    question: "Include Kitchen Essentials?",
+    priceKey: "kitchenEssentials",
+  },
+  {
+    id: "patio",
+    kind: "qtyNoImage",
+    title: "Patio Area (Add-on)",
+    question: "Include patio setup?",
+    priceKey: "patio",
+  },
+
+  /* FIXED ADD-ONS */
+  {
+    id: "entryway",
+    kind: "fixedNoImage",
+    title: "Entryway Package (Add-on)",
+    question: "Would you like to include it?",
+    priceKey: "entryway",
+  },
+  {
+    id: "office",
+    kind: "fixedNoImage",
+    title: "Office / Den Package (Add-on)",
+    question: "Would you like to include it?",
+    priceKey: "office",
+  },
+
+  { id: "summary", kind: "summary", title: "Review Your Selections" },
+
+  {
+    id: "contact",
+    kind: "contact",
+    title: "Your Package Is Ready!",
+    subtitle: "Enter your details and we’ll send your estimate.",
+  },
+];
+
+/* ------------------ FINAL WEBHOOK ------------------ */
+const WEBHOOK_URL =
+  "https://services.leadconnectorhq.com/hooks/9BZdBwDz8uXZfiw31MXE/webhook-trigger/39fded8a-339b-4721-afe7-ddd55985784b";
+
+/* ------------------ Qty Pill ------------------ */
+const QtyPill = ({ value, active, onClick }) => (
+  <button className={`qty-pill ${active ? "active" : ""}`} onClick={onClick}>
+    {value}
+  </button>
+);
+
+/* ------------------ MAIN APP ------------------ */
 export default function App() {
-  const [step, setStep] = useState("start");
+  const [mode, setMode] = useState("landing");
+  const [selectedRetreat, setSelectedRetreat] = useState(null);
 
-  // ---------- Step 1: Retreat Selection ----------
-  const retreats = [
-    {
-      id: "condo",
-      title: "Condo Luxe Living",
-      subtitle: "Condo Luxe – tailored for Urban Retreats",
-      image: "/images/condo_Cue_Photo.jpg",
-    },
-    {
-      id: "estate",
-      title: "Grand Estate Luxury",
-      subtitle: "Grand Estate – designed for Spacious Homes",
-      image: "/images/grand_Estate_Cue_photo.jpg",
-    },
-  ];
+  const [step, setStep] = useState(0);
+  const [isBack, setIsBack] = useState(false);
 
-  // ---------- Step 2–4 Data ----------
-  const rooms = [
-    {
-      id: "living",
-      title: "Living Room",
-      image: "/images/living.jpg",
-      details: [
-        "Rug 7×9 $600",
-        "Sofa $2,000",
-        "Coffee Table $800",
-        "2 End Tables $400",
-        "2 Accent Chairs $700",
-        "Credenza $700",
-        "2 Lamps $300",
-        "Wall Hanging $900",
-        "Accessories $400",
-        "Soft Goods (pillows / throws) $400",
-      ],
-      subtitle: "Living Areas (Living / Family Room) – $7,800",
-    },
-    {
-      id: "dining",
-      title: "Dining Room",
-      image: "/images/dining.jpg",
-      details: [
-        "Dining Table $2,000",
-        "6 Dining Chairs $2,000",
-        "Rug $600",
-        "Console $350",
-        "Wall Hanging $450",
-      ],
-      subtitle: "Dining Room – $5,400",
-    },
-    {
-      id: "bedroom",
-      title: "Bedroom",
-      image: "/images/bedroom.jpg",
-      details: [
-        "Rug $450",
-        "Bed $600",
-        "Mattress $500",
-        "Bedding $300",
-        "2 Nightstands $400",
-        "2 Lamps $300",
-        "Wall Hanging $450",
-        "Console $350",
-      ],
-      subtitle: "Bedroom – $3,350 (each)",
-    },
-    {
-      id: "bathroom",
-      title: "Bathroom",
-      image: "/images/bathroom.jpg",
-      details: ["Includes: Towels, Soap Dispenser, Art"],
-      subtitle: "Bathroom – $250 (each)",
-    },
-    {
-      id: "kitchen",
-      title: "Kitchen Accessories",
-      image: "/images/kitchen.jpg",
-      details: ["Includes: Decorative art and styling accessories"],
-      subtitle: "Kitchen (Art & Accessories) – $100",
-    },
-    {
-      id: "office",
-      title: "Office",
-      image: "/images/office.jpg",
-      details: ["Desk setup, chair, décor accessories"],
-      subtitle: "Office – $1,500",
-    },
-  ];
+  const [qty, setQty] = useState(
+    Object.keys(PRICING).reduce((acc, key) => ({ ...acc, [key]: null }), {})
+  );
 
-  const addOns = [
-    {
-      name: "Kitchen Essentials",
-      details: "Cookware set, utensils, dishware, glassware $500",
-    },
-    { name: "Patio Area", details: "Patio Set $1,500" },
-    {
-      name: "Entryway Package",
-      details: "Mirror $100 + Console $250 + Accessories/Lamp $250 $750",
-    },
-    {
-      name: "Den Package",
-      details: "Desk setup, chair, décor accessories $1,500",
-    },
-  ];
+  const [formData, setFormData] = useState({
+    name: "",
+    address: "",
+    email: "",
+    phone: "",
+  });
 
-  // ---------- Step 1 ----------
-  if (step === "start") {
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const current = STEPS[step];
+
+  const setQuantity = (key, val) => {
+    setQty((prev) => ({ ...prev, [key]: val }));
+    setError("");
+  };
+
+  /* ------------------ BACKEND TOTALS (hidden in UI) ------------------ */
+  const lineItems = useMemo(() => {
+    return Object.entries(qty)
+      .filter(([_, q]) => q > 0)
+      .map(([key, q]) => ({
+        key,
+        label: PRICING[key].label,
+        qty: q,
+        unit: PRICING[key].price,
+        total: q * PRICING[key].price,
+      }));
+  }, [qty]);
+
+  const addOnKeys = ["kitchenEssentials", "patio", "entryway", "office"];
+
+  const addOnsTotal = useMemo(() => {
+    return addOnKeys.reduce((sum, key) => {
+      const q = qty[key] || 0;
+      return sum + q * PRICING[key].price;
+    }, 0);
+  }, [qty]);
+
+  const grandTotal = useMemo(
+    () => lineItems.reduce((s, i) => s + i.total, 0),
+    [lineItems]
+  );
+
+  /* ------------------ Navigation ------------------ */
+  const next = () => {
+    const optional = ["kitchenEssentials", "patio", "entryway", "office"];
+
+    if (
+      (current.kind === "qty" || current.kind === "qtyNoImage") &&
+      !optional.includes(current.priceKey) &&
+      qty[current.priceKey] === null
+    ) {
+      setError("Please select a quantity");
+      return;
+    }
+
+    setIsBack(false);
+    setStep((p) => p + 1);
+    window.scrollTo(0, 0);
+  };
+
+  const back = () => {
+    setIsBack(true);
+    setStep((p) => p - 1);
+    window.scrollTo(0, 0);
+  };
+
+  /* ------------------ Submit ------------------ */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.name || !formData.address || !formData.email || !formData.phone) {
+      setError("All fields are required.");
+      return;
+    }
+
+    setLoading(true);
+
+    const payload = {
+      retreatType: selectedRetreat,
+      ...formData,
+      items: lineItems,
+      addOnsTotal,
+      grandTotal,
+    };
+
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      setSubmitted(true);
+    } catch (error) {
+      setError("Submission failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ------------------ LUXURY LANDING PAGE ------------------ */
+  if (mode === "landing") {
     return (
       <div className="luxury-container">
         <div className="luxury-header">
           <h2>What kind of Luxury Retreat are you building?</h2>
-          <p>
-            Select the option that best matches your property — this helps us
-            tailor your furniture layout, scale, and overall design package.
-          </p>
+          <p>Select the retreat type to begin your quote.</p>
         </div>
 
         <div className="luxury-grid">
-          {retreats.map((opt) => (
-            <div key={opt.id} className="luxury-item">
-              <img src={opt.image} alt={opt.title} />
-              <h3>{opt.title}</h3>
-              <button
-                className="fancy-btn"
-                onClick={() =>
-                  setStep(opt.id === "estate" ? "estate" : "main")
-                }
-              >
-                {opt.subtitle}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+          <div className="luxury-item">
+            <img src="/images/condo_Cue_Photo.jpg" alt="" />
+            <h3>Condo Luxe Living</h3>
+            <button
+              className="fancy-btn luxury-sub-btn"
+              onClick={() => {
+                setSelectedRetreat("Condo Luxe Living");
+                setMode("wizard");
+              }}
+            >
+              Condo Luxe — Start Quote
+            </button>
+          </div>
 
-  // ---------- Step 2: Condo Main ----------
-  if (step === "main") {
-    return (
-      <div className="room-container">
-        <h2 className="lux-h2">Condo Luxe Living</h2>
-        <div className="room-grid">
-          {rooms.map((room) => (
-            <div className="room-card" key={room.id}>
-              <img src={room.image} alt={room.title} />
-              <div className="room-title">
-                <button className="fancy-btn" onClick={() => setStep(room.id)}>
-                  {room.title} Price
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="dual-btn-row">
-          <button className="btn-back" onClick={() => setStep("start")}>
-            Back
-          </button>
-          <button className="fancy-btn" onClick={() => setStep("addons")}>
-            Add-Ons
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ---------- Step 3: Room Details ----------
-  const currentRoom = rooms.find((r) => r.id === step);
-  if (currentRoom) {
-    return (
-      <div className="detail-container">
-        <h2>{currentRoom.title}</h2>
-        <div className="detail-layout">
-          <img src={currentRoom.image} alt={currentRoom.title} />
-          <div className="detail-info">
-            <p className="subtitle">
-              <span className="square"></span> {currentRoom.subtitle}
-            </p>
-            <ul>
-              {currentRoom.details.map((line, idx) => (
-                <li key={idx}>{line}</li>
-              ))}
-            </ul>
+          <div className="luxury-item">
+            <img src="/images/grand_Estate_Cue_photo.jpg" alt="" />
+            <h3>Grand Estate Luxury</h3>
+            <button
+              className="fancy-btn luxury-sub-btn"
+              onClick={() => {
+                setSelectedRetreat("Grand Estate Luxury");
+                setMode("wizard");
+              }}
+            >
+              Grand Estate — Start Quote
+            </button>
           </div>
         </div>
-
-        <div className="dual-btn-row">
-          <button className="btn-back" onClick={() => setStep("main")}>
-            Back
-          </button>
-        </div>
       </div>
     );
   }
 
-  // ---------- Step 4: Add-Ons ----------
-  if (step === "addons") {
-    return (
-      <div className="detail-container">
-        <h2>Add-Ons</h2>
-        <div className="addons-content">
-          <ul>
-            {addOns.map((item, idx) => (
-              <li key={idx}>
-                <strong>{item.name}</strong>
-                <p>{item.details}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <button className="btn-back" onClick={() => setStep("main")}>
-          Back
-        </button>
-      </div>
-    );
-  }
-
-  // ---------- Step 5: Grand Estate ----------
-if (step === "estate") {
+  /* ------------------ WIZARD ------------------ */
   return (
-    <div className="estate-container">
-      <h2 className="lux-h2">Grand Estate Luxury</h2>
-
-      <div className="estate-gallery">
-        <div className="estate-row">
-          <img src="/images/img1.webp" alt="Estate Living" />
-          <img src="/images/img2.webp" alt="Estate Dining" />
-        </div>
-        <button
-          className="fancy-btn quote-btn"
-          onClick={() => alert("Quote request form will go here")}
-        >
-          Request a Quote
-        </button>
-
-        <div className="estate-row">
-          <img src="/images/img3.webp" alt="Estate Lounge" />
-          <img src="/images/img4.webp" alt="Estate Bedroom" />
-        </div>
-        <button
-          className="fancy-btn quote-btn"
-          onClick={() => alert("Quote request form will go here")}
-        >
-          Request a Quote
-        </button>
-
-        <div className="estate-row">
-          <img src="/images/img5.webp" alt="Estate Kitchen" />
-          <img src="/images/img6.webp" alt="Estate Suite" />
-        </div>
-        <button
-          className="fancy-btn quote-btn"
-          onClick={() => alert("Quote request form will go here")}
-        >
-          Request a Quote
-        </button>
+    <div className="page">
+      <div className="topbar">
+        Step {step + 1} / {STEPS.length}
       </div>
 
-      <div className="dual-btn-row">
-        <button className="btn-back" onClick={() => setStep("start")}>
-          Back
-        </button>
+      <div
+        className={`step-anim ${isBack ? "slide-in-left" : "slide-in-right"}`}
+      >
+        {/* ------------------ QUANTITY PAGES ------------------ */}
+        {(current.kind === "qty" || current.kind === "qtyNoImage") && (
+          <section className={`step card ${current.kind === "qtyNoImage" ? "no-image" : ""}`}>
+            <h2 className="lux-h2">
+              {selectedRetreat} – {current.title}
+            </h2>
+
+            {/* ------------------ ROOMS W/ IMAGE ------------------ */}
+            {current.kind === "qty" && (
+              <div className="fixed-grid">
+                <div className="media">
+                  <img src={current.image} alt="" />
+                </div>
+
+                <div className="content">
+                  <p className="question">{current.question}</p>
+
+                  <div className="pill-row">
+                    {[1, 2, 3].map((n) => (
+                      <QtyPill
+                        key={n}
+                        value={n}
+                        active={qty[current.priceKey] === n}
+                        onClick={() =>
+                          setQuantity(
+                            current.priceKey,
+                            qty[current.priceKey] === n ? null : n
+                          )
+                        }
+                      />
+                    ))}
+
+                    {/* Quantity Input */}
+                    <input
+                      type="number"
+                      min="1"
+                      className="qty-input"
+                      placeholder="Qty"
+                      value={
+                        qty[current.priceKey] > 3 ? qty[current.priceKey] : ""
+                      }
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value, 10);
+                        setQuantity(current.priceKey, isNaN(v) ? null : v);
+                      }}
+                    />
+                  </div>
+
+                  {error && <div className="inline-error">{error}</div>}
+
+                  <div className="nav-row">
+                    {step > 0 && (
+                      <button className="fancy-btn reverse" onClick={back}>
+                        ← Back
+                      </button>
+                    )}
+                    <button className="fancy-btn" onClick={next}>
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ------------------ ADD-ONS WITH QUANTITY ------------------ */}
+            {current.kind === "qtyNoImage" && (
+              <>
+                <p className="question">{current.question}</p>
+
+                <div className="pill-row">
+                  {[1, 2, 3].map((n) => (
+                    <QtyPill
+                      key={n}
+                      value={n}
+                      active={qty[current.priceKey] === n}
+                      onClick={() =>
+                        setQuantity(
+                          current.priceKey,
+                          qty[current.priceKey] === n ? null : n
+                        )
+                      }
+                    />
+                  ))}
+
+                  {/* ⭐ ADD-ON QUANTITY INPUT (ADDED NOW) */}
+                  <input
+                    type="number"
+                    min="1"
+                    className="qty-input"
+                    placeholder="Qty"
+                    value={qty[current.priceKey] > 3 ? qty[current.priceKey] : ""}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10);
+                      setQuantity(current.priceKey, isNaN(v) ? null : v);
+                    }}
+                  />
+                </div>
+
+                <div className="nav-row">
+                  <button className="fancy-btn reverse" onClick={back}>
+                    ← Back
+                  </button>
+                  <button className="fancy-btn" onClick={next}>
+                    Next →
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {/* ------------------ FIXED ADD-ON ------------------ */}
+        {current.kind === "fixedNoImage" && (
+          <section className="step card no-image">
+            <h2 className="lux-h2">
+              {selectedRetreat} – {current.title}
+            </h2>
+
+            <div className="pill-row">
+              <QtyPill
+                value="Add"
+                active={qty[current.priceKey] === 1}
+                onClick={() =>
+                  setQuantity(
+                    current.priceKey,
+                    qty[current.priceKey] === 1 ? null : 1
+                  )
+                }
+              />
+            </div>
+
+            <div className="nav-row">
+              <button className="fancy-btn reverse" onClick={back}>
+                ← Back
+              </button>
+              <button className="fancy-btn" onClick={next}>
+                Next →
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* ------------------ SUMMARY (NO PRICES SHOWN) ------------------ */}
+        {current.kind === "summary" && (
+          <section className="summary card">
+            <h2 className="lux-h2">Review Your Selections</h2>
+
+            <ul className="summary-list">
+              {lineItems.map((item) => (
+                <li key={item.key}>
+                  {item.qty} × {item.label}
+                </li>
+              ))}
+            </ul>
+
+            <div className="nav-row">
+              <button className="fancy-btn reverse" onClick={back}>
+                ← Back
+              </button>
+              <button className="fancy-btn" onClick={next}>
+                Continue →
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* ------------------ CONTACT ------------------ */}
+        {current.kind === "contact" && !submitted && (
+          <section className="contact card">
+            <h2 className="lux-h2">{selectedRetreat} Package</h2>
+            <p className="sub">Enter your details below.</p>
+
+            <form className="contact-form" onSubmit={handleSubmit}>
+              {["name", "address", "email", "phone"].map((field) => (
+                <label key={field}>
+                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                  <input
+                    type={
+                      field === "email"
+                        ? "email"
+                        : field === "phone"
+                        ? "tel"
+                        : "text"
+                    }
+                    name={field}
+                    value={formData[field]}
+                    placeholder={`Enter your ${field}`}
+                    onChange={(e) =>
+                      setFormData({ ...formData, [field]: e.target.value })
+                    }
+                  />
+                </label>
+              ))}
+
+              {error && <div className="inline-error">{error}</div>}
+
+              <button className="fancy-btn wide" disabled={loading}>
+                {loading ? "Sending..." : "Send My Quote"}
+              </button>
+            </form>
+          </section>
+        )}
+
+        {/* ------------------ THANK YOU ------------------ */}
+        {submitted && (
+          <section className="thankyou card">
+            <h2 className="lux-h2">Thank You!</h2>
+            <p>Your quote has been successfully submitted.</p>
+          </section>
+        )}
       </div>
     </div>
   );
-}
-
-
-  return null;
 }
