@@ -328,3 +328,21 @@ body {
 .thankyou p {
   text-align: center;
 }
+
+/* Disabled fancy button */
+.fancy-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background-color: #d6d6d6 !important;
+  color: #7a7a7a !important;
+  border-color: #d6d6d6 !important;
+
+  /* Remove hover/active animations */
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.fancy-btn:disabled:hover {
+  background-color: #d6d6d6 !important;
+  color: #7a7a7a !important;
+}

@@ -137,9 +137,36 @@ export default function App() {
 
   const current = STEPS[step];
 
-  const setQuantity = (key, val) => {
+  /* ---------- required steps (Next disabled until qty selected) ---------- */
+  const requiredQtySteps = ["living", "dining", "bedroom", "bathroom", "kitchenArt"];
+
+  const isNextDisabled = () => {
+    if (
+      (current.kind === "qty" || current.kind === "qtyNoImage") &&
+      requiredQtySteps.includes(current.priceKey)
+    ) {
+      return !qty[current.priceKey];
+    }
+    return false;
+  };
+
+  /* ---------- auto-next helper (used only for pills / Add) ---------- */
+  const autoNext = () => {
+    setTimeout(() => {
+      setIsBack(false);
+      setStep((p) => p + 1);
+      window.scrollTo(0, 0);
+    }, 150);
+  };
+
+  /* ---------- quantity setter: auto-next only when fromPill = true ---------- */
+  const setQuantity = (key, val, fromPill = false) => {
     setQty((prev) => ({ ...prev, [key]: val }));
     setError("");
+
+    if (fromPill && val && val > 0) {
+      autoNext();
+    }
   };
 
   /* ------------------ BACKEND TOTALS (hidden in UI) ------------------ */
@@ -281,7 +308,11 @@ export default function App() {
       >
         {/* ------------------ QUANTITY PAGES ------------------ */}
         {(current.kind === "qty" || current.kind === "qtyNoImage") && (
-          <section className={`step card ${current.kind === "qtyNoImage" ? "no-image" : ""}`}>
+          <section
+            className={`step card ${
+              current.kind === "qtyNoImage" ? "no-image" : ""
+            }`}
+          >
             <h2 className="lux-h2">
               {selectedRetreat} – {current.title}
             </h2>
@@ -305,7 +336,8 @@ export default function App() {
                         onClick={() =>
                           setQuantity(
                             current.priceKey,
-                            qty[current.priceKey] === n ? null : n
+                            qty[current.priceKey] === n ? null : n,
+                            true // pill → auto-next
                           )
                         }
                       />
@@ -322,7 +354,11 @@ export default function App() {
                       }
                       onChange={(e) => {
                         const v = parseInt(e.target.value, 10);
-                        setQuantity(current.priceKey, isNaN(v) ? null : v);
+                        setQuantity(
+                          current.priceKey,
+                          isNaN(v) ? null : v,
+                          false // manual input → no auto-next
+                        );
                       }}
                     />
                   </div>
@@ -335,7 +371,11 @@ export default function App() {
                         ← Back
                       </button>
                     )}
-                    <button className="fancy-btn" onClick={next}>
+                    <button
+                      className="fancy-btn"
+                      onClick={next}
+                      disabled={isNextDisabled()}
+                    >
                       Next →
                     </button>
                   </div>
@@ -357,13 +397,14 @@ export default function App() {
                       onClick={() =>
                         setQuantity(
                           current.priceKey,
-                          qty[current.priceKey] === n ? null : n
+                          qty[current.priceKey] === n ? null : n,
+                          true // pills → auto-next even for add-ons
                         )
                       }
                     />
                   ))}
 
-                  {/* ⭐ ADD-ON QUANTITY INPUT (ADDED NOW) */}
+                  {/* ⭐ ADD-ON QUANTITY INPUT */}
                   <input
                     type="number"
                     min="1"
@@ -372,7 +413,11 @@ export default function App() {
                     value={qty[current.priceKey] > 3 ? qty[current.priceKey] : ""}
                     onChange={(e) => {
                       const v = parseInt(e.target.value, 10);
-                      setQuantity(current.priceKey, isNaN(v) ? null : v);
+                      setQuantity(
+                        current.priceKey,
+                        isNaN(v) ? null : v,
+                        false // manual → no auto-next
+                      );
                     }}
                   />
                 </div>
@@ -404,7 +449,8 @@ export default function App() {
                 onClick={() =>
                   setQuantity(
                     current.priceKey,
-                    qty[current.priceKey] === 1 ? null : 1
+                    qty[current.priceKey] === 1 ? null : 1,
+                    true // Add → auto-next
                   )
                 }
               />
